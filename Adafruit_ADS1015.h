@@ -125,7 +125,7 @@ protected:
  public:
   Adafruit_ADS1015(uint8_t i2cAddress = ADS1015_ADDRESS);
   bool begin();
-  uint16_t  readADC_SingleEnded(uint8_t channel);
+  bool      readADC_SingleEnded(uint8_t channel, uint16_t* value);
   int16_t   readADC_Differential_0_1();
   int16_t   readADC_Differential_2_3();
   void      startComparator_SingleEnded(uint8_t channel, int16_t threshold);

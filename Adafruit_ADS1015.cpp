@@ -46,7 +46,9 @@ static bool readRegister(uint8_t i2cAddress, uint16_t *result) {
     return false;
   }
   Wire.requestFrom(i2cAddress, (uint8_t)2);
-  *result = ((Wire.read() << 8) | Wire.read());
+  if (result) {
+    *result = ((Wire.read() << 8) | Wire.read());
+  }
   return true;
 }
 
@@ -110,10 +112,9 @@ adsGain_t Adafruit_ADS1015::getGain()
     @brief  Gets a single-ended ADC reading from the specified channel
 */
 /**************************************************************************/
-uint16_t Adafruit_ADS1015::readADC_SingleEnded(uint8_t channel) {
-  if (channel > 3)
-  {
-    return 0;
+bool Adafruit_ADS1015::readADC_SingleEnded(uint8_t channel, uint16_t *value) {
+  if (channel > 3) {
+    return false;
   }
   
   // Start with default values
@@ -148,16 +149,22 @@ uint16_t Adafruit_ADS1015::readADC_SingleEnded(uint8_t channel) {
   config |= ADS1015_REG_CONFIG_OS_SINGLE;
 
   // Write config register to the ADC
-  writeRegister(m_i2cAddress, ADS1015_REG_POINTER_CONFIG, config);
+  if (!writeRegister(m_i2cAddress, ADS1015_REG_POINTER_CONFIG, config)) {
+    return false;
+  }
 
   // Wait for the conversion to complete
   delay(m_conversionDelay);
 
   // Read the conversion results
   // Shift 12-bit results right 4 bits for the ADS1015
-  uint16_t res;
-  readRegister(m_i2cAddress, &res);
-  return res >> m_bitShift;
+  if (!readRegister(m_i2cAddress, value)) {
+    return false;
+  }
+  if (value) {
+    *value = *value >> m_bitShift;
+  }
+  return true;
 }
 
 /**************************************************************************/
