@@ -6,7 +6,7 @@ Adafruit_ADS1015 ads;     /* Use thi for the 12-bit version */
 
 void setup(void) 
 {
-  Serial.begin(9600);
+  Serial.begin(115200);
   Serial.println("Hello!");
   
   Serial.println("Getting single-ended readings from AIN0..3");
@@ -25,22 +25,28 @@ void setup(void)
   // ads.setGain(GAIN_EIGHT);      // 8x gain   +/- 0.512V  1 bit = 0.25mV   0.015625mV
   // ads.setGain(GAIN_SIXTEEN);    // 16x gain  +/- 0.256V  1 bit = 0.125mV  0.0078125mV
   
-  ads.begin();
+  Wire.begin();
+  if (ads.begin()) {
+    Serial.println("ADS begin with success");
+  } else {
+    Serial.println("ADS begin with failed");
+  }
 }
 
 void loop(void) 
 {
-  int16_t adc0, adc1, adc2, adc3;
+  uint16_t value;
 
-  adc0 = ads.readADC_SingleEnded(0);
-  adc1 = ads.readADC_SingleEnded(1);
-  adc2 = ads.readADC_SingleEnded(2);
-  adc3 = ads.readADC_SingleEnded(3);
-  Serial.print("AIN0: "); Serial.println(adc0);
-  Serial.print("AIN1: "); Serial.println(adc1);
-  Serial.print("AIN2: "); Serial.println(adc2);
-  Serial.print("AIN3: "); Serial.println(adc3);
+  for (int i = 0; i < 4; i++) {
+    Serial.print("AIN");
+    Serial.print(i);
+    Serial.print(": ");
+    if (ads.readADC_SingleEnded(i, &value)) {
+      Serial.println(value);
+    } else {
+      Serial.println("no value");
+    }
+  }
   Serial.println(" ");
-  
   delay(1000);
 }
