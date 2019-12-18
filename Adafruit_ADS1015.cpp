@@ -39,15 +39,15 @@ static bool writeRegister(uint8_t i2cAddress, uint8_t reg, uint16_t value) {
     @brief  Writes 16-bits to the specified destination register
 */
 /**************************************************************************/
-static bool readRegister(uint8_t i2cAddress, uint16_t *result) {
+static bool readRegister(uint8_t i2cAddress, uint16_t *value) {
   Wire.beginTransmission(i2cAddress);
   Wire.write(ADS1015_REG_POINTER_CONVERT);
   if (Wire.endTransmission() != 0) {
     return false;
   }
   Wire.requestFrom(i2cAddress, (uint8_t)2);
-  if (result) {
-    *result = ((Wire.read() << 8) | Wire.read());
+  if (value) {
+    *value = ((Wire.read() << 8) | Wire.read());
   }
   return true;
 }
@@ -200,23 +200,23 @@ int16_t Adafruit_ADS1015::readADC_Differential_0_1() {
   delay(m_conversionDelay);
 
   // Read the conversion results
-  uint16_t res;
-  readRegister(m_i2cAddress, &res);
-  res = res >> m_bitShift;
+  uint16_t value;
+  readRegister(m_i2cAddress, &value);
+  value = value >> m_bitShift;
   if (m_bitShift == 0)
   {
-    return (int16_t)res;
+    return (int16_t)value;
   }
   else
   {
     // Shift 12-bit results right 4 bits for the ADS1015,
     // making sure we keep the sign bit intact
-    if (res > 0x07FF)
+    if (value > 0x07FF)
     {
       // negative number - extend the sign to 16th bit
-      res |= 0xF000;
+      value |= 0xF000;
     }
-    return (int16_t)res;
+    return (int16_t)value;
   }
 }
 
@@ -253,23 +253,23 @@ int16_t Adafruit_ADS1015::readADC_Differential_2_3() {
   delay(m_conversionDelay);
 
   // Read the conversion results
-  uint16_t res;
-  readRegister(m_i2cAddress, &res);
-  res = res >> m_bitShift;
+  uint16_t value;
+  readRegister(m_i2cAddress, &value);
+  value = value >> m_bitShift;
   if (m_bitShift == 0)
   {
-    return (int16_t)res;
+    return (int16_t)value;
   }
   else
   {
     // Shift 12-bit results right 4 bits for the ADS1015,
     // making sure we keep the sign bit intact
-    if (res > 0x07FF)
+    if (value > 0x07FF)
     {
       // negative number - extend the sign to 16th bit
-      res |= 0xF000;
+      value |= 0xF000;
     }
-    return (int16_t)res;
+    return (int16_t)value;
   }
 }
 
@@ -282,7 +282,7 @@ int16_t Adafruit_ADS1015::readADC_Differential_2_3() {
             This will also set the ADC in continuous conversion mode.
 */
 /**************************************************************************/
-void Adafruit_ADS1015::startComparator_SingleEnded(uint8_t channel, int16_t threshold)
+bool Adafruit_ADS1015::startComparator_SingleEnded(uint8_t channel, int16_t threshold)
 {
   // Start with default values
   uint16_t config = ADS1015_REG_CONFIG_CQUE_1CONV   | // Comparator enabled and asserts on 1 match
@@ -315,10 +315,12 @@ void Adafruit_ADS1015::startComparator_SingleEnded(uint8_t channel, int16_t thre
 
   // Set the high threshold register
   // Shift 12-bit results left 4 bits for the ADS1015
-  writeRegister(m_i2cAddress, ADS1015_REG_POINTER_HITHRESH, threshold << m_bitShift);
+  if (!writeRegister(m_i2cAddress, ADS1015_REG_POINTER_HITHRESH, threshold << m_bitShift)) {
+    return false;
+  }
 
   // Write config register to the ADC
-  writeRegister(m_i2cAddress, ADS1015_REG_POINTER_CONFIG, config);
+  return writeRegister(m_i2cAddress, ADS1015_REG_POINTER_CONFIG, config);
 }
 
 /**************************************************************************/
@@ -334,23 +336,23 @@ int16_t Adafruit_ADS1015::getLastConversionResults()
   delay(m_conversionDelay);
 
   // Read the conversion results
-  uint16_t res;
-  readRegister(m_i2cAddress, &res);
-  res = res >> m_bitShift;
+  uint16_t value;
+  readRegister(m_i2cAddress, &value);
+  value = value >> m_bitShift;
   if (m_bitShift == 0)
   {
-    return (int16_t)res;
+    return (int16_t)value;
   }
   else
   {
     // Shift 12-bit results right 4 bits for the ADS1015,
     // making sure we keep the sign bit intact
-    if (res > 0x07FF)
+    if (value > 0x07FF)
     {
       // negative number - extend the sign to 16th bit
-      res |= 0xF000;
+      value |= 0xF000;
     }
-    return (int16_t)res;
+    return (int16_t)value;
   }
 }
 
