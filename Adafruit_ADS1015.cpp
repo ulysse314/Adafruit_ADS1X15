@@ -42,10 +42,10 @@ static bool writeRegister(uint8_t i2cAddress, uint8_t reg, uint16_t value) {
 static bool readRegister(uint8_t i2cAddress, uint16_t *value) {
   Wire.beginTransmission(i2cAddress);
   Wire.write(ADS1015_REG_POINTER_CONVERT);
-  if (Wire.endTransmission() != 0) {
+  if (Wire.endTransmission(false) != 0) {
     return false;
   }
-  Wire.requestFrom(i2cAddress, (uint8_t)2);
+  Wire.requestFrom(i2cAddress, 2);
   if (value) {
     *value = ((Wire.read() << 8) | Wire.read());
   }
