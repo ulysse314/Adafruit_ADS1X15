@@ -105,8 +105,7 @@ typedef enum
   GAIN_SIXTEEN      = ADS1015_REG_CONFIG_PGA_0_256V
 } adsGain_t;
 
-class ADS1X15
-{
+class ADS1X15 {
  public:
   enum class I2CAddress {
     I2CAddressGND = 0x48,
@@ -134,14 +133,12 @@ class ADS1X15
   adsGain_t m_gain;
 };
 
-class ADS1115 : public ADS1X15
-{
+class ADS1115 : public ADS1X15 {
  public:
   ADS1115(I2CAddress i2cAddress = I2CAddress::I2CAddressGND);
 };
 
-class ADS1015 : public ADS1X15
-{
+class ADS1015 : public ADS1X15 {
  public:
   ADS1015(I2CAddress i2cAddress = I2CAddress::I2CAddressGND);
 };
