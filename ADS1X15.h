@@ -23,12 +23,6 @@
 #include <Wire.h>
 
 /*=========================================================================
-    I2C ADDRESS/BITS
-    -----------------------------------------------------------------------*/
-    #define ADS1015_ADDRESS                 (0x48)    // 1001 000 (ADDR = GND)
-/*=========================================================================*/
-
-/*=========================================================================
     CONVERSION DELAY (in mS)
     -----------------------------------------------------------------------*/
     #define ADS1015_CONVERSIONDELAY         (1)
@@ -116,6 +110,13 @@ typedef enum
 class ADS1X15
 {
  public:
+  enum class I2CAddress {
+    I2CAddressGND = 0x48,
+    I2CAddressVDD = 0x49,
+    I2CAddressSDA = 0x4A,
+    I2CAddressSCL = 0x4B,
+  };
+ 
   bool begin();
   bool      readADC_SingleEnded(uint8_t channel, uint16_t* value);
   int16_t   readADC_Differential_0_1();
@@ -124,12 +125,12 @@ class ADS1X15
   int16_t   getLastConversionResults();
   void      setGain(adsGain_t gain);
   adsGain_t getGain();
-  uint8_t   i2cAddress() const { return m_i2cAddress; };
+  I2CAddress i2cAddress() const { return _i2cAddress; };
 
  protected:
-  ADS1X15(uint8_t i2cAddress, uint8_t conversionDelay, uint8_t bitShift);
+  ADS1X15(I2CAddress i2cAddress, uint8_t conversionDelay, uint8_t bitShift);
   // Instance-specific properties
-  uint8_t   m_i2cAddress;
+  I2CAddress _i2cAddress;
   uint8_t   m_conversionDelay;
   uint8_t   m_bitShift;
   adsGain_t m_gain;
@@ -138,11 +139,11 @@ class ADS1X15
 class ADS1115 : public ADS1X15
 {
  public:
-  ADS1115(uint8_t i2cAddress = ADS1015_ADDRESS);
+  ADS1115(I2CAddress i2cAddress = I2CAddress::I2CAddressGND);
 };
 
 class ADS1015 : public ADS1X15
 {
  public:
-  ADS1015(uint8_t i2cAddress = ADS1015_ADDRESS);
+  ADS1015(I2CAddress i2cAddress = I2CAddress::I2CAddressGND);
 };
