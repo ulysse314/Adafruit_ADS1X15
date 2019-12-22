@@ -18,7 +18,8 @@
 */
 /**************************************************************************/
 
-#include "Arduino.h"
+#include <Arduino.h>
+#include <Wire.h>
 
 /*=========================================================================
     CONVERSION DELAY (in mS)
@@ -125,24 +126,25 @@ class ADS1X15 {
   I2CAddress i2cAddress() const { return _i2cAddress; };
 
  protected:
-  ADS1X15(I2CAddress i2cAddress, uint8_t conversionDelay, uint8_t bitShift);
+  ADS1X15(uint8_t conversionDelay, uint8_t bitShift, I2CAddress i2cAddress, TwoWire *i2cBus);
 
   bool writeRegister(uint8_t reg, uint16_t value);
   bool readRegister(uint16_t *value);
 
   // Instance-specific properties
-  I2CAddress _i2cAddress;
   uint8_t   m_conversionDelay;
   uint8_t   m_bitShift;
   adsGain_t m_gain;
+  I2CAddress _i2cAddress;
+  TwoWire *_i2cBus;
 };
 
 class ADS1115 : public ADS1X15 {
  public:
-  ADS1115(I2CAddress i2cAddress = I2CAddress::I2CAddressGND);
+  ADS1115(I2CAddress i2cAddress = I2CAddress::I2CAddressGND, TwoWire *i2cBus = &Wire);
 };
 
 class ADS1015 : public ADS1X15 {
  public:
-  ADS1015(I2CAddress i2cAddress = I2CAddress::I2CAddressGND);
+  ADS1015(I2CAddress i2cAddress = I2CAddress::I2CAddressGND, TwoWire *i2cBus = &Wire);
 };

@@ -21,13 +21,12 @@
 
 #include "ADS1X15.h"
 
-#include <Wire.h>
-
-ADS1X15::ADS1X15(I2CAddress i2cAddress, uint8_t conversionDelay, uint8_t bitShift) {
-   _i2cAddress = i2cAddress;
+ADS1X15::ADS1X15(uint8_t conversionDelay, uint8_t bitShift, I2CAddress i2cAddress, TwoWire *i2cBus) {
    m_conversionDelay = conversionDelay;
    m_bitShift = bitShift;
    m_gain = GAIN_TWOTHIRDS;
+   _i2cAddress = i2cAddress;
+   _i2cBus = i2cBus;
 }
 
 bool ADS1X15::writeRegister(uint8_t reg, uint16_t value) {
@@ -56,7 +55,7 @@ bool ADS1X15::readRegister(uint16_t *value) {
     @brief  Instantiates a new ADS1015 class w/appropriate properties
 */
 /**************************************************************************/
-ADS1015::ADS1015(I2CAddress i2cAddress) : ADS1X15(i2cAddress, ADS1015_CONVERSIONDELAY, 4)
+ADS1015::ADS1015(I2CAddress i2cAddress, TwoWire *i2cBus) : ADS1X15(ADS1015_CONVERSIONDELAY, 4, i2cAddress, i2cBus)
 {
 }
 
@@ -65,7 +64,7 @@ ADS1015::ADS1015(I2CAddress i2cAddress) : ADS1X15(i2cAddress, ADS1015_CONVERSION
     @brief  Instantiates a new ADS1115 class w/appropriate properties
 */
 /**************************************************************************/
-ADS1115::ADS1115(I2CAddress i2cAddress) : ADS1X15(i2cAddress, ADS1115_CONVERSIONDELAY, 0)
+ADS1115::ADS1115(I2CAddress i2cAddress, TwoWire *i2cBus) : ADS1X15(ADS1115_CONVERSIONDELAY, 0, i2cAddress, i2cBus)
 {
 }
 
