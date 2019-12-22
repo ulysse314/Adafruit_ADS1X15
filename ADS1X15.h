@@ -24,7 +24,7 @@
     CONVERSION DELAY (in mS)
     -----------------------------------------------------------------------*/
     #define ADS1015_CONVERSIONDELAY         (1)
-    #define ADS1115_CONVERSIONDELAY         (8)
+    #define ADS1115_CONVERSIONDELAY         (10)
 /*=========================================================================*/
 
 /*=========================================================================
@@ -115,7 +115,7 @@ class ADS1X15 {
   };
  
   bool begin();
-  bool      readADC_SingleEnded(uint8_t channel, uint16_t* value);
+  bool      readADC_SingleEnded(uint8_t channel, int16_t* value);
   int16_t   readADC_Differential_0_1();
   int16_t   readADC_Differential_2_3();
   bool      startComparator_SingleEnded(uint8_t channel, int16_t threshold);

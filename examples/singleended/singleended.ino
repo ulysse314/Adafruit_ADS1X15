@@ -35,7 +35,7 @@ void setup(void)
 
 void loop(void) 
 {
-  uint16_t value;
+  int16_t value;
 
   for (int i = 0; i < 4; i++) {
     Serial.print("AIN");

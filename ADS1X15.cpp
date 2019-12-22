@@ -113,7 +113,7 @@ adsGain_t ADS1X15::getGain()
     @brief  Gets a single-ended ADC reading from the specified channel
 */
 /**************************************************************************/
-bool ADS1X15::readADC_SingleEnded(uint8_t channel, uint16_t *value) {
+bool ADS1X15::readADC_SingleEnded(uint8_t channel, int16_t *value) {
   if (channel > 3) {
     return false;
   }
@@ -159,7 +159,7 @@ bool ADS1X15::readADC_SingleEnded(uint8_t channel, uint16_t *value) {
 
   // Read the conversion results
   // Shift 12-bit results right 4 bits for the ADS1015
-  if (!readRegister(_i2cAddress, value)) {
+  if (!readRegister(_i2cAddress, (uint16_t *)value)) {
     return false;
   }
   if (value) {
