@@ -21,6 +21,8 @@
 
 #include "ADS1X15.h"
 
+#include <Wire.h>
+
 /**************************************************************************/
 /*!
     @brief  Writes 16-bits to the specified destination register
