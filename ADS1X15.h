@@ -130,6 +130,7 @@ class ADS1X15 {
 
   bool writeRegister(uint8_t reg, uint16_t value);
   bool readRegister(uint16_t *value);
+  virtual unsigned int conversionDelay() = 0;
 
   // Instance-specific properties
   uint8_t   m_conversionDelay;
@@ -142,9 +143,15 @@ class ADS1X15 {
 class ADS1115 : public ADS1X15 {
  public:
   ADS1115(I2CAddress i2cAddress = I2CAddress::I2CAddressGND, TwoWire *i2cBus = &Wire);
+
+ protected:
+  unsigned int conversionDelay() override;
 };
 
 class ADS1015 : public ADS1X15 {
  public:
   ADS1015(I2CAddress i2cAddress = I2CAddress::I2CAddressGND, TwoWire *i2cBus = &Wire);
+
+ protected:
+  unsigned int conversionDelay() override;
 };

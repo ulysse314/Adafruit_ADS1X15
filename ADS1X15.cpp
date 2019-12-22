@@ -22,11 +22,11 @@
 #include "ADS1X15.h"
 
 ADS1X15::ADS1X15(uint8_t conversionDelay, uint8_t bitShift, I2CAddress i2cAddress, TwoWire *i2cBus) {
-   m_conversionDelay = conversionDelay;
-   m_bitShift = bitShift;
-   m_gain = GAIN_TWOTHIRDS;
-   _i2cAddress = i2cAddress;
-   _i2cBus = i2cBus;
+  m_conversionDelay = conversionDelay;
+  m_bitShift = bitShift;
+  m_gain = GAIN_TWOTHIRDS;
+  _i2cAddress = i2cAddress;
+  _i2cBus = i2cBus;
 }
 
 bool ADS1X15::writeRegister(uint8_t reg, uint16_t value) {
@@ -48,24 +48,6 @@ bool ADS1X15::readRegister(uint16_t *value) {
     *value = ((Wire.read() << 8) | Wire.read());
   }
   return true;
-}
-
-/**************************************************************************/
-/*!
-    @brief  Instantiates a new ADS1015 class w/appropriate properties
-*/
-/**************************************************************************/
-ADS1015::ADS1015(I2CAddress i2cAddress, TwoWire *i2cBus) : ADS1X15(ADS1015_CONVERSIONDELAY, 4, i2cAddress, i2cBus)
-{
-}
-
-/**************************************************************************/
-/*!
-    @brief  Instantiates a new ADS1115 class w/appropriate properties
-*/
-/**************************************************************************/
-ADS1115::ADS1115(I2CAddress i2cAddress, TwoWire *i2cBus) : ADS1X15(ADS1115_CONVERSIONDELAY, 0, i2cAddress, i2cBus)
-{
 }
 
 /**************************************************************************/
@@ -144,7 +126,7 @@ bool ADS1X15::readADC_SingleEnded(uint8_t channel, int16_t *value) {
   }
 
   // Wait for the conversion to complete
-  delay(m_conversionDelay);
+  delay(conversionDelay());
 
   // Read the conversion results
   // Shift 12-bit results right 4 bits for the ADS1015
@@ -187,7 +169,7 @@ int16_t ADS1X15::readADC_Differential_0_1() {
   writeRegister(ADS1015_REG_POINTER_CONFIG, config);
 
   // Wait for the conversion to complete
-  delay(m_conversionDelay);
+  delay(conversionDelay());
 
   // Read the conversion results
   uint16_t value;
@@ -240,7 +222,7 @@ int16_t ADS1X15::readADC_Differential_2_3() {
   writeRegister(ADS1015_REG_POINTER_CONFIG, config);
 
   // Wait for the conversion to complete
-  delay(m_conversionDelay);
+  delay(conversionDelay());
 
   // Read the conversion results
   uint16_t value;
@@ -323,7 +305,7 @@ bool ADS1X15::startComparator_SingleEnded(uint8_t channel, int16_t threshold)
 int16_t ADS1X15::getLastConversionResults()
 {
   // Wait for the conversion to complete
-  delay(m_conversionDelay);
+  delay(conversionDelay());
 
   // Read the conversion results
   uint16_t value;
@@ -346,3 +328,28 @@ int16_t ADS1X15::getLastConversionResults()
   }
 }
 
+/**************************************************************************/
+/*!
+    @brief  Instantiates a new ADS1015 class w/appropriate properties
+*/
+/**************************************************************************/
+ADS1015::ADS1015(I2CAddress i2cAddress, TwoWire *i2cBus) : ADS1X15(ADS1015_CONVERSIONDELAY, 4, i2cAddress, i2cBus)
+{
+}
+
+unsigned int ADS1015::conversionDelay() {
+  return m_conversionDelay;
+}
+
+/**************************************************************************/
+/*!
+    @brief  Instantiates a new ADS1115 class w/appropriate properties
+*/
+/**************************************************************************/
+ADS1115::ADS1115(I2CAddress i2cAddress, TwoWire *i2cBus) : ADS1X15(ADS1115_CONVERSIONDELAY, 0, i2cAddress, i2cBus)
+{
+}
+
+unsigned int ADS1115::conversionDelay() {
+  return m_conversionDelay;
+}
