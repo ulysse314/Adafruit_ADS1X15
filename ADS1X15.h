@@ -126,6 +126,10 @@ class ADS1X15 {
 
  protected:
   ADS1X15(I2CAddress i2cAddress, uint8_t conversionDelay, uint8_t bitShift);
+
+  bool writeRegister(uint8_t reg, uint16_t value);
+  bool readRegister(uint16_t *value);
+
   // Instance-specific properties
   I2CAddress _i2cAddress;
   uint8_t   m_conversionDelay;
