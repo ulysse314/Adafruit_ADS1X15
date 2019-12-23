@@ -98,6 +98,8 @@ class ADS1X15 {
     SDA = 0x4A,
     SCL = 0x4B,
   };
+
+  virtual ~ADS1X15();
  
   bool begin() { return true; };
   bool      readADC_SingleEnded(uint8_t channel, int16_t* value);

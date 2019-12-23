@@ -21,6 +21,9 @@
 
 #include "ADS1X15.h"
 
+ADS1X15::~ADS1X15() {
+}
+
 /**************************************************************************/
 /*!
     @brief  Gets a single-ended ADC reading from the specified channel
