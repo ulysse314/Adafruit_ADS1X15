@@ -342,25 +342,25 @@ bool ADS1X15::readRegister(uint16_t *value) {
     @brief  Instantiates a new ADS1015 class w/appropriate properties
 */
 /**************************************************************************/
-ADS1015::ADS1015(I2CAddress i2cAddress, TwoWire *i2cBus) : ADS1X15(4, (uint16_t)DataRate::DataRate1600SPS, i2cAddress, i2cBus)
+ADS1015::ADS1015(I2CAddress i2cAddress, TwoWire *i2cBus) : ADS1X15(4, (uint16_t)DataRate::SPS1600, i2cAddress, i2cBus)
 {
 }
 
 unsigned int ADS1015::samplePerSecond() {
   switch (dataRate()) {
-  case DataRate::DataRate128SPS:
+  case DataRate::SPS128:
     return 128;
-  case DataRate::DataRate250SPS:
+  case DataRate::SPS250:
     return 250;
-  case DataRate::DataRate490SPS:
+  case DataRate::SPS490:
     return 490;
-  case DataRate::DataRate920SPS:
+  case DataRate::SPS920:
     return 920;
-  case DataRate::DataRate1600SPS:
+  case DataRate::SPS1600:
     return 1600;
-  case DataRate::DataRate2400SPS:
+  case DataRate::SPS2400:
     return 2400;
-  case DataRate::DataRate3300SPS:
+  case DataRate::SPS3300:
     return 3300;
   }
   return 1;
@@ -371,27 +371,27 @@ unsigned int ADS1015::samplePerSecond() {
     @brief  Instantiates a new ADS1115 class w/appropriate properties
 */
 /**************************************************************************/
-ADS1115::ADS1115(I2CAddress i2cAddress, TwoWire *i2cBus) : ADS1X15(0, (uint16_t)DataRate::DataRate128SPS, i2cAddress, i2cBus)
+ADS1115::ADS1115(I2CAddress i2cAddress, TwoWire *i2cBus) : ADS1X15(0, (uint16_t)DataRate::SPS128, i2cAddress, i2cBus)
 {
 }
 
 unsigned int ADS1115::samplePerSecond() {
   switch (dataRate()) {
-  case DataRate::DataRate8SPS:
+  case DataRate::SPS8:
     return 8;
-  case DataRate::DataRate16SPS:
+  case DataRate::SPS16:
     return 16;
-  case DataRate::DataRate32SPS:
+  case DataRate::SPS32:
     return 32;
-  case DataRate::DataRate64SPS:
+  case DataRate::SPS64:
     return 64;
-  case DataRate::DataRate128SPS:
+  case DataRate::SPS128:
     return 128;
-  case DataRate::DataRate250SPS:
+  case DataRate::SPS250:
     return 250;
-  case DataRate::DataRate475SPS:
+  case DataRate::SPS475:
     return 475;
-  case DataRate::DataRate860SPS:
+  case DataRate::SPS860:
     return 860;
   }
   return 1;

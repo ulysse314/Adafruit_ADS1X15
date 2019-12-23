@@ -93,10 +93,10 @@ typedef enum
 class ADS1X15 {
  public:
   enum class I2CAddress {
-    I2CAddressGND = 0x48,
-    I2CAddressVDD = 0x49,
-    I2CAddressSDA = 0x4A,
-    I2CAddressSCL = 0x4B,
+    GND = 0x48,
+    VDD = 0x49,
+    SDA = 0x4A,
+    SCL = 0x4B,
   };
  
   bool begin();
@@ -129,17 +129,17 @@ class ADS1X15 {
 
 class ADS1015 : public ADS1X15 {
  public:
-  enum class DataRate {
-    DataRate128SPS = 000,
-    DataRate250SPS = 0x20,
-    DataRate490SPS = 0x40,
-    DataRate920SPS = 0x60,
-    DataRate1600SPS = 0x80, // Default
-    DataRate2400SPS = 0xA0,
-    DataRate3300SPS = 0xC0,
+  enum class DataRate : uint16_t {
+    SPS128 = 000,
+    SPS250 = 0x20,
+    SPS490 = 0x40,
+    SPS920 = 0x60,
+    SPS1600 = 0x80, // Default
+    SPS2400 = 0xA0,
+    SPS3300 = 0xC0,
   };
 
-  ADS1015(I2CAddress i2cAddress = I2CAddress::I2CAddressGND, TwoWire *i2cBus = &Wire);
+  ADS1015(I2CAddress i2cAddress = I2CAddress::GND, TwoWire *i2cBus = &Wire);
 
   void setDataRate(DataRate dataRate) { _dataRateBits = (uint16_t)dataRate; };
   DataRate dataRate() { return (DataRate)_dataRateBits; };
@@ -150,18 +150,18 @@ class ADS1015 : public ADS1X15 {
 
 class ADS1115 : public ADS1X15 {
  public:
-  enum class DataRate {
-    DataRate8SPS = 000,
-    DataRate16SPS = 0x20,
-    DataRate32SPS = 0x40,
-    DataRate64SPS = 0x60,
-    DataRate128SPS = 0x80, // Default
-    DataRate250SPS = 0xA0,
-    DataRate475SPS = 0xC0,
-    DataRate860SPS = 0xE0,
+  enum class DataRate : uint16_t {
+    SPS8 = 000,
+    SPS16 = 0x20,
+    SPS32 = 0x40,
+    SPS64 = 0x60,
+    SPS128 = 0x80, // Default
+    SPS250 = 0xA0,
+    SPS475 = 0xC0,
+    SPS860 = 0xE0,
   };
 
-  ADS1115(I2CAddress i2cAddress = I2CAddress::I2CAddressGND, TwoWire *i2cBus = &Wire);
+  ADS1115(I2CAddress i2cAddress = I2CAddress::GND, TwoWire *i2cBus = &Wire);
 
   void setDataRate(DataRate dataRate) { _dataRateBits = (uint16_t)dataRate; };
   DataRate dataRate() { return (DataRate)_dataRateBits; };
