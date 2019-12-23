@@ -99,25 +99,25 @@ class ADS1X15 {
     SCL = 0x4B,
   };
  
-  bool begin();
+  bool begin() { return true; };
   bool      readADC_SingleEnded(uint8_t channel, int16_t* value);
   int16_t   readADC_Differential_0_1();
   int16_t   readADC_Differential_2_3();
   bool      startComparator_SingleEnded(uint8_t channel, int16_t threshold);
   int16_t   getLastConversionResults();
-  void      setGain(adsGain_t gain);
-  adsGain_t getGain();
+  void setGain(adsGain_t gain) { m_gain = gain; };
+  adsGain_t getGain() const { return m_gain; };
   // Time to wait until the value is ready.
-  unsigned int conversionDelay();
+  unsigned int conversionDelay() const;
   I2CAddress i2cAddress() const { return _i2cAddress; };
 
  protected:
   ADS1X15(uint8_t bitShift, uint16_t dataRateBits, I2CAddress i2cAddress, TwoWire *i2cBus);
 
-  bool writeRegister(uint8_t reg, uint16_t value);
-  bool readRegister(uint16_t *value);
+  bool writeRegister(uint8_t reg, uint16_t value) const;
+  bool readRegister(uint16_t *value) const;
   // Number of samples per seconds.
-  virtual unsigned int samplePerSecond() = 0;
+  virtual unsigned int samplePerSecond() const = 0;
 
   // Instance-specific properties
   uint8_t   m_bitShift;
@@ -142,8 +142,8 @@ class ADS1015 : public ADS1X15 {
   ADS1015(I2CAddress i2cAddress = I2CAddress::GND, TwoWire *i2cBus = &Wire);
 
   void setDataRate(DataRate dataRate) { _dataRateBits = (uint16_t)dataRate; };
-  DataRate dataRate() { return (DataRate)_dataRateBits; };
-  unsigned int samplePerSecond() override;
+  DataRate dataRate() const { return (DataRate)_dataRateBits; };
+  unsigned int samplePerSecond() const override;
 
  protected:
 };
@@ -164,8 +164,8 @@ class ADS1115 : public ADS1X15 {
   ADS1115(I2CAddress i2cAddress = I2CAddress::GND, TwoWire *i2cBus = &Wire);
 
   void setDataRate(DataRate dataRate) { _dataRateBits = (uint16_t)dataRate; };
-  DataRate dataRate() { return (DataRate)_dataRateBits; };
-  unsigned int samplePerSecond() override;
+  DataRate dataRate() const { return (DataRate)_dataRateBits; };
+  unsigned int samplePerSecond() const override;
 
  protected:
 };

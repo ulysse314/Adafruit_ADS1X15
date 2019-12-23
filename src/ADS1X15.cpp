@@ -23,35 +23,6 @@
 
 /**************************************************************************/
 /*!
-    @brief  Sets up the HW (reads coefficients values, etc.)
-*/
-/**************************************************************************/
-bool ADS1X15::begin() {
-  return true;
-}
-
-/**************************************************************************/
-/*!
-    @brief  Sets the gain and input voltage range
-*/
-/**************************************************************************/
-void ADS1X15::setGain(adsGain_t gain)
-{
-  m_gain = gain;
-}
-
-/**************************************************************************/
-/*!
-    @brief  Gets a gain and input voltage range
-*/
-/**************************************************************************/
-adsGain_t ADS1X15::getGain()
-{
-  return m_gain;
-}
-
-/**************************************************************************/
-/*!
     @brief  Gets a single-ended ADC reading from the specified channel
 */
 /**************************************************************************/
@@ -299,7 +270,7 @@ int16_t ADS1X15::getLastConversionResults()
   }
 }
 
-unsigned int ADS1X15::conversionDelay() {
+unsigned int ADS1X15::conversionDelay() const {
   unsigned int value = ceil(1000. / (float)samplePerSecond());
   // Adding an extra 1ms for security.
   return value + 1;
@@ -316,7 +287,7 @@ ADS1X15::ADS1X15(uint8_t bitShift,
     m_gain(GAIN_TWOTHIRDS) {
 }
 
-bool ADS1X15::writeRegister(uint8_t reg, uint16_t value) {
+bool ADS1X15::writeRegister(uint8_t reg, uint16_t value) const {
   Wire.beginTransmission((uint8_t)_i2cAddress);
   Wire.write((uint8_t)reg);
   Wire.write((uint8_t)(value>>8));
@@ -324,7 +295,7 @@ bool ADS1X15::writeRegister(uint8_t reg, uint16_t value) {
   return Wire.endTransmission() == 0;
 }
 
-bool ADS1X15::readRegister(uint16_t *value) {
+bool ADS1X15::readRegister(uint16_t *value) const {
   Wire.beginTransmission((uint8_t)_i2cAddress);
   Wire.write(ADS1015_REG_POINTER_CONVERT);
   if (Wire.endTransmission(false) != 0) {
@@ -346,7 +317,7 @@ ADS1015::ADS1015(I2CAddress i2cAddress, TwoWire *i2cBus) : ADS1X15(4, (uint16_t)
 {
 }
 
-unsigned int ADS1015::samplePerSecond() {
+unsigned int ADS1015::samplePerSecond() const {
   switch (dataRate()) {
   case DataRate::SPS128:
     return 128;
@@ -375,7 +346,7 @@ ADS1115::ADS1115(I2CAddress i2cAddress, TwoWire *i2cBus) : ADS1X15(0, (uint16_t)
 {
 }
 
-unsigned int ADS1115::samplePerSecond() {
+unsigned int ADS1115::samplePerSecond() const {
   switch (dataRate()) {
   case DataRate::SPS8:
     return 8;
