@@ -21,12 +21,17 @@
 
 #include "ADS1X15.h"
 
-ADS1X15::ADS1X15(uint8_t conversionDelay, uint8_t bitShift, I2CAddress i2cAddress, TwoWire *i2cBus) {
-  m_conversionDelay = conversionDelay;
-  m_bitShift = bitShift;
-  m_gain = GAIN_TWOTHIRDS;
-  _i2cAddress = i2cAddress;
-  _i2cBus = i2cBus;
+ADS1X15::ADS1X15(uint8_t conversionDelay,
+                 uint8_t bitShift,
+                 uint16_t dataRateBits,
+                 I2CAddress i2cAddress,
+                 TwoWire *i2cBus) :
+    m_conversionDelay(conversionDelay),
+    m_bitShift(bitShift),
+    _i2cAddress(i2cAddress),
+    _i2cBus(i2cBus),
+    _dataRateBits(dataRateBits),
+    m_gain(GAIN_TWOTHIRDS) {
 }
 
 bool ADS1X15::writeRegister(uint8_t reg, uint16_t value) {
@@ -94,7 +99,7 @@ bool ADS1X15::readADC_SingleEnded(uint8_t channel, int16_t *value) {
                     ADS1015_REG_CONFIG_CLAT_NONLAT  | // Non-latching (default val)
                     ADS1015_REG_CONFIG_CPOL_ACTVLOW | // Alert/Rdy active low   (default val)
                     ADS1015_REG_CONFIG_CMODE_TRAD   | // Traditional comparator (default val)
-                    ADS1015_REG_CONFIG_DR_1600SPS   | // 1600 samples per second (default)
+                    _dataRateBits                   |
                     ADS1015_REG_CONFIG_MODE_SINGLE;   // Single-shot mode (default)
 
   // Set PGA/voltage range
@@ -153,7 +158,7 @@ int16_t ADS1X15::readADC_Differential_0_1() {
                     ADS1015_REG_CONFIG_CLAT_NONLAT  | // Non-latching (default val)
                     ADS1015_REG_CONFIG_CPOL_ACTVLOW | // Alert/Rdy active low   (default val)
                     ADS1015_REG_CONFIG_CMODE_TRAD   | // Traditional comparator (default val)
-                    ADS1015_REG_CONFIG_DR_1600SPS   | // 1600 samples per second (default)
+                    _dataRateBits                   |
                     ADS1015_REG_CONFIG_MODE_SINGLE;   // Single-shot mode (default)
 
   // Set PGA/voltage range
@@ -206,7 +211,7 @@ int16_t ADS1X15::readADC_Differential_2_3() {
                     ADS1015_REG_CONFIG_CLAT_NONLAT  | // Non-latching (default val)
                     ADS1015_REG_CONFIG_CPOL_ACTVLOW | // Alert/Rdy active low   (default val)
                     ADS1015_REG_CONFIG_CMODE_TRAD   | // Traditional comparator (default val)
-                    ADS1015_REG_CONFIG_DR_1600SPS   | // 1600 samples per second (default)
+                    _dataRateBits                   |
                     ADS1015_REG_CONFIG_MODE_SINGLE;   // Single-shot mode (default)
 
   // Set PGA/voltage range
@@ -261,7 +266,7 @@ bool ADS1X15::startComparator_SingleEnded(uint8_t channel, int16_t threshold)
                     ADS1015_REG_CONFIG_CLAT_LATCH   | // Latching mode
                     ADS1015_REG_CONFIG_CPOL_ACTVLOW | // Alert/Rdy active low   (default val)
                     ADS1015_REG_CONFIG_CMODE_TRAD   | // Traditional comparator (default val)
-                    ADS1015_REG_CONFIG_DR_1600SPS   | // 1600 samples per second (default)
+                    _dataRateBits                   |
                     ADS1015_REG_CONFIG_MODE_CONTIN  | // Continuous conversion mode
                     ADS1015_REG_CONFIG_MODE_CONTIN;   // Continuous conversion mode
 
@@ -333,7 +338,7 @@ int16_t ADS1X15::getLastConversionResults()
     @brief  Instantiates a new ADS1015 class w/appropriate properties
 */
 /**************************************************************************/
-ADS1015::ADS1015(I2CAddress i2cAddress, TwoWire *i2cBus) : ADS1X15(ADS1015_CONVERSIONDELAY, 4, i2cAddress, i2cBus)
+ADS1015::ADS1015(I2CAddress i2cAddress, TwoWire *i2cBus) : ADS1X15(ADS1015_CONVERSIONDELAY, 4, (uint16_t)DataRate::DataRate1600SPS, i2cAddress, i2cBus)
 {
 }
 
@@ -346,7 +351,7 @@ unsigned int ADS1015::conversionDelay() {
     @brief  Instantiates a new ADS1115 class w/appropriate properties
 */
 /**************************************************************************/
-ADS1115::ADS1115(I2CAddress i2cAddress, TwoWire *i2cBus) : ADS1X15(ADS1115_CONVERSIONDELAY, 0, i2cAddress, i2cBus)
+ADS1115::ADS1115(I2CAddress i2cAddress, TwoWire *i2cBus) : ADS1X15(ADS1115_CONVERSIONDELAY, 0, (uint16_t)DataRate::DataRate128SPS, i2cAddress, i2cBus)
 {
 }
 

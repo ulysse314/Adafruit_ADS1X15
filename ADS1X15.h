@@ -68,15 +68,6 @@
     #define ADS1015_REG_CONFIG_MODE_CONTIN  (0x0000)  // Continuous conversion mode
     #define ADS1015_REG_CONFIG_MODE_SINGLE  (0x0100)  // Power-down single-shot mode (default)
 
-    #define ADS1015_REG_CONFIG_DR_MASK      (0x00E0)  
-    #define ADS1015_REG_CONFIG_DR_128SPS    (0x0000)  // 128 samples per second
-    #define ADS1015_REG_CONFIG_DR_250SPS    (0x0020)  // 250 samples per second
-    #define ADS1015_REG_CONFIG_DR_490SPS    (0x0040)  // 490 samples per second
-    #define ADS1015_REG_CONFIG_DR_920SPS    (0x0060)  // 920 samples per second
-    #define ADS1015_REG_CONFIG_DR_1600SPS   (0x0080)  // 1600 samples per second (default)
-    #define ADS1015_REG_CONFIG_DR_2400SPS   (0x00A0)  // 2400 samples per second
-    #define ADS1015_REG_CONFIG_DR_3300SPS   (0x00C0)  // 3300 samples per second
-
     #define ADS1015_REG_CONFIG_CMODE_MASK   (0x0010)
     #define ADS1015_REG_CONFIG_CMODE_TRAD   (0x0000)  // Traditional comparator with hysteresis (default)
     #define ADS1015_REG_CONFIG_CMODE_WINDOW (0x0010)  // Window comparator
@@ -126,7 +117,7 @@ class ADS1X15 {
   I2CAddress i2cAddress() const { return _i2cAddress; };
 
  protected:
-  ADS1X15(uint8_t conversionDelay, uint8_t bitShift, I2CAddress i2cAddress, TwoWire *i2cBus);
+  ADS1X15(uint8_t conversionDelay, uint8_t bitShift, uint16_t dataRateBits, I2CAddress i2cAddress, TwoWire *i2cBus);
 
   bool writeRegister(uint8_t reg, uint16_t value);
   bool readRegister(uint16_t *value);
@@ -135,22 +126,50 @@ class ADS1X15 {
   // Instance-specific properties
   uint8_t   m_conversionDelay;
   uint8_t   m_bitShift;
-  adsGain_t m_gain;
   I2CAddress _i2cAddress;
   TwoWire *_i2cBus;
+  uint16_t _dataRateBits;
+  adsGain_t m_gain;
 };
 
-class ADS1115 : public ADS1X15 {
+class ADS1015 : public ADS1X15 {
  public:
-  ADS1115(I2CAddress i2cAddress = I2CAddress::I2CAddressGND, TwoWire *i2cBus = &Wire);
+  enum class DataRate {
+    DataRate128SPS = 000,
+    DataRate250SPS = 0x20,
+    DataRate490SPS = 0x40,
+    DataRate920SPS = 0x60,
+    DataRate1600SPS = 0x80, // Default
+    DataRate2400SPS = 0xA0,
+    DataRate3300SPS = 0xC0,
+  };
+
+  ADS1015(I2CAddress i2cAddress = I2CAddress::I2CAddressGND, TwoWire *i2cBus = &Wire);
+
+  void setDataRate(DataRate dataRate) { _dataRateBits = (uint16_t)dataRate; };
+  DataRate dataRate() { return (DataRate)_dataRateBits; };
 
  protected:
   unsigned int conversionDelay() override;
 };
 
-class ADS1015 : public ADS1X15 {
+class ADS1115 : public ADS1X15 {
  public:
-  ADS1015(I2CAddress i2cAddress = I2CAddress::I2CAddressGND, TwoWire *i2cBus = &Wire);
+  enum class DataRate {
+    DataRate8SPS = 000,
+    DataRate16SPS = 0x20,
+    DataRate32SPS = 0x40,
+    DataRate64SPS = 0x60,
+    DataRate128SPS = 0x80, // Default
+    DataRate250SPS = 0xA0,
+    DataRate475SPS = 0xC0,
+    DataRate860SPS = 0xE0,
+  };
+
+  ADS1115(I2CAddress i2cAddress = I2CAddress::I2CAddressGND, TwoWire *i2cBus = &Wire);
+
+  void setDataRate(DataRate dataRate) { _dataRateBits = (uint16_t)dataRate; };
+  DataRate dataRate() { return (DataRate)_dataRateBits; };
 
  protected:
   unsigned int conversionDelay() override;
