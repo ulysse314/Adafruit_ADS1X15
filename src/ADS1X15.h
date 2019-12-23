@@ -18,6 +18,9 @@
 */
 /**************************************************************************/
 
+#ifndef ADS1115_h
+#define ADS1115_h
+
 #include <Arduino.h>
 #include <Wire.h>
 
@@ -171,3 +174,5 @@ class ADS1115 : public ADS1X15 {
 
  protected:
 };
+
+#endif  // ADS1115_h
