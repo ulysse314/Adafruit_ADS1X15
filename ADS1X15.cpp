@@ -21,40 +21,6 @@
 
 #include "ADS1X15.h"
 
-ADS1X15::ADS1X15(uint8_t conversionDelay,
-                 uint8_t bitShift,
-                 uint16_t dataRateBits,
-                 I2CAddress i2cAddress,
-                 TwoWire *i2cBus) :
-    m_conversionDelay(conversionDelay),
-    m_bitShift(bitShift),
-    _i2cAddress(i2cAddress),
-    _i2cBus(i2cBus),
-    _dataRateBits(dataRateBits),
-    m_gain(GAIN_TWOTHIRDS) {
-}
-
-bool ADS1X15::writeRegister(uint8_t reg, uint16_t value) {
-  Wire.beginTransmission((uint8_t)_i2cAddress);
-  Wire.write((uint8_t)reg);
-  Wire.write((uint8_t)(value>>8));
-  Wire.write((uint8_t)(value & 0xFF));
-  return Wire.endTransmission() == 0;
-}
-
-bool ADS1X15::readRegister(uint16_t *value) {
-  Wire.beginTransmission((uint8_t)_i2cAddress);
-  Wire.write(ADS1015_REG_POINTER_CONVERT);
-  if (Wire.endTransmission(false) != 0) {
-    return false;
-  }
-  Wire.requestFrom((uint8_t)_i2cAddress, 2);
-  if (value) {
-    *value = ((Wire.read() << 8) | Wire.read());
-  }
-  return true;
-}
-
 /**************************************************************************/
 /*!
     @brief  Sets up the HW (reads coefficients values, etc.)
@@ -333,17 +299,71 @@ int16_t ADS1X15::getLastConversionResults()
   }
 }
 
+unsigned int ADS1X15::conversionDelay() {
+  unsigned int value = ceil(1000. / (float)samplePerSecond());
+  // Adding an extra 1ms for security.
+  return value + 1;
+};
+
+ADS1X15::ADS1X15(uint8_t bitShift,
+                 uint16_t dataRateBits,
+                 I2CAddress i2cAddress,
+                 TwoWire *i2cBus) :
+    m_bitShift(bitShift),
+    _i2cAddress(i2cAddress),
+    _i2cBus(i2cBus),
+    _dataRateBits(dataRateBits),
+    m_gain(GAIN_TWOTHIRDS) {
+}
+
+bool ADS1X15::writeRegister(uint8_t reg, uint16_t value) {
+  Wire.beginTransmission((uint8_t)_i2cAddress);
+  Wire.write((uint8_t)reg);
+  Wire.write((uint8_t)(value>>8));
+  Wire.write((uint8_t)(value & 0xFF));
+  return Wire.endTransmission() == 0;
+}
+
+bool ADS1X15::readRegister(uint16_t *value) {
+  Wire.beginTransmission((uint8_t)_i2cAddress);
+  Wire.write(ADS1015_REG_POINTER_CONVERT);
+  if (Wire.endTransmission(false) != 0) {
+    return false;
+  }
+  Wire.requestFrom((uint8_t)_i2cAddress, 2);
+  if (value) {
+    *value = ((Wire.read() << 8) | Wire.read());
+  }
+  return true;
+}
+
 /**************************************************************************/
 /*!
     @brief  Instantiates a new ADS1015 class w/appropriate properties
 */
 /**************************************************************************/
-ADS1015::ADS1015(I2CAddress i2cAddress, TwoWire *i2cBus) : ADS1X15(ADS1015_CONVERSIONDELAY, 4, (uint16_t)DataRate::DataRate1600SPS, i2cAddress, i2cBus)
+ADS1015::ADS1015(I2CAddress i2cAddress, TwoWire *i2cBus) : ADS1X15(4, (uint16_t)DataRate::DataRate1600SPS, i2cAddress, i2cBus)
 {
 }
 
-unsigned int ADS1015::conversionDelay() {
-  return m_conversionDelay;
+unsigned int ADS1015::samplePerSecond() {
+  switch (dataRate()) {
+  case DataRate::DataRate128SPS:
+    return 128;
+  case DataRate::DataRate250SPS:
+    return 250;
+  case DataRate::DataRate490SPS:
+    return 490;
+  case DataRate::DataRate920SPS:
+    return 920;
+  case DataRate::DataRate1600SPS:
+    return 1600;
+  case DataRate::DataRate2400SPS:
+    return 2400;
+  case DataRate::DataRate3300SPS:
+    return 3300;
+  }
+  return 1;
 }
 
 /**************************************************************************/
@@ -351,10 +371,28 @@ unsigned int ADS1015::conversionDelay() {
     @brief  Instantiates a new ADS1115 class w/appropriate properties
 */
 /**************************************************************************/
-ADS1115::ADS1115(I2CAddress i2cAddress, TwoWire *i2cBus) : ADS1X15(ADS1115_CONVERSIONDELAY, 0, (uint16_t)DataRate::DataRate128SPS, i2cAddress, i2cBus)
+ADS1115::ADS1115(I2CAddress i2cAddress, TwoWire *i2cBus) : ADS1X15(0, (uint16_t)DataRate::DataRate128SPS, i2cAddress, i2cBus)
 {
 }
 
-unsigned int ADS1115::conversionDelay() {
-  return m_conversionDelay;
+unsigned int ADS1115::samplePerSecond() {
+  switch (dataRate()) {
+  case DataRate::DataRate8SPS:
+    return 8;
+  case DataRate::DataRate16SPS:
+    return 16;
+  case DataRate::DataRate32SPS:
+    return 32;
+  case DataRate::DataRate64SPS:
+    return 64;
+  case DataRate::DataRate128SPS:
+    return 128;
+  case DataRate::DataRate250SPS:
+    return 250;
+  case DataRate::DataRate475SPS:
+    return 475;
+  case DataRate::DataRate860SPS:
+    return 860;
+  }
+  return 1;
 }

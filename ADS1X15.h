@@ -22,13 +22,6 @@
 #include <Wire.h>
 
 /*=========================================================================
-    CONVERSION DELAY (in mS)
-    -----------------------------------------------------------------------*/
-    #define ADS1015_CONVERSIONDELAY         (1)
-    #define ADS1115_CONVERSIONDELAY         (10)
-/*=========================================================================*/
-
-/*=========================================================================
     POINTER REGISTER
     -----------------------------------------------------------------------*/
     #define ADS1015_REG_POINTER_MASK        (0x03)
@@ -114,17 +107,19 @@ class ADS1X15 {
   int16_t   getLastConversionResults();
   void      setGain(adsGain_t gain);
   adsGain_t getGain();
+  // Time to wait until the value is ready.
+  unsigned int conversionDelay();
   I2CAddress i2cAddress() const { return _i2cAddress; };
 
  protected:
-  ADS1X15(uint8_t conversionDelay, uint8_t bitShift, uint16_t dataRateBits, I2CAddress i2cAddress, TwoWire *i2cBus);
+  ADS1X15(uint8_t bitShift, uint16_t dataRateBits, I2CAddress i2cAddress, TwoWire *i2cBus);
 
   bool writeRegister(uint8_t reg, uint16_t value);
   bool readRegister(uint16_t *value);
-  virtual unsigned int conversionDelay() = 0;
+  // Number of samples per seconds.
+  virtual unsigned int samplePerSecond() = 0;
 
   // Instance-specific properties
-  uint8_t   m_conversionDelay;
   uint8_t   m_bitShift;
   I2CAddress _i2cAddress;
   TwoWire *_i2cBus;
@@ -148,9 +143,9 @@ class ADS1015 : public ADS1X15 {
 
   void setDataRate(DataRate dataRate) { _dataRateBits = (uint16_t)dataRate; };
   DataRate dataRate() { return (DataRate)_dataRateBits; };
+  unsigned int samplePerSecond() override;
 
  protected:
-  unsigned int conversionDelay() override;
 };
 
 class ADS1115 : public ADS1X15 {
@@ -170,7 +165,7 @@ class ADS1115 : public ADS1X15 {
 
   void setDataRate(DataRate dataRate) { _dataRateBits = (uint16_t)dataRate; };
   DataRate dataRate() { return (DataRate)_dataRateBits; };
+  unsigned int samplePerSecond() override;
 
  protected:
-  unsigned int conversionDelay() override;
 };
