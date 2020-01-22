@@ -126,8 +126,8 @@ class ADS1X15 {
 
   // Instance-specific properties
   uint8_t   m_bitShift;
-  I2CAddress _i2cAddress;
-  TwoWire *_i2cBus;
+  const I2CAddress _i2cAddress;
+  TwoWire *const _i2cBus;
   uint16_t _dataRateBits;
   adsGain_t m_gain;
 };
