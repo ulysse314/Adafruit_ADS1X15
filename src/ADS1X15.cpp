@@ -342,7 +342,10 @@ bool ADS1X15::readRegister(uint8_t reg, uint16_t *value) const {
   if (Wire.endTransmission(false) != 0) {
     return false;
   }
-  Wire.requestFrom((uint8_t)_i2cAddress, 2);
+  uint8_t read = Wire.requestFrom((uint8_t)_i2cAddress, 2);
+  if (read != 2) {
+    return false;
+  }
   if (value) {
     *value = ((Wire.read() << 8) | Wire.read());
   }
