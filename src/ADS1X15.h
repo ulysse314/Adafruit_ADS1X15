@@ -120,10 +120,10 @@ typedef enum {
 class ADS1X15 {
  public:
   enum class I2CAddress {
-    GND = 0x48,
-    VDD = 0x49,
-    SDA = 0x4A,
-    SCL = 0x4B,
+    ToGND = 0x48,
+    ToVDD = 0x49,
+    ToSDA = 0x4A,
+    ToSCL = 0x4B,
   };
 
   virtual ~ADS1X15();
@@ -173,7 +173,7 @@ class ADS1015 : public ADS1X15 {
     SPS3300 = 0xC0,
   };
 
-  ADS1015(I2CAddress i2cAddress = I2CAddress::GND, TwoWire *i2cBus = &Wire);
+  ADS1015(I2CAddress i2cAddress = I2CAddress::ToGND, TwoWire *i2cBus = &Wire);
 
   void setDataRate(DataRate dataRate) { _dataRateBits = (uint16_t)dataRate; };
   DataRate dataRate() const { return (DataRate)_dataRateBits; };
@@ -198,7 +198,7 @@ class ADS1115 : public ADS1X15 {
     SPS860 = 0xE0,
   };
 
-  ADS1115(I2CAddress i2cAddress = I2CAddress::GND, TwoWire *i2cBus = &Wire);
+  ADS1115(I2CAddress i2cAddress = I2CAddress::ToGND, TwoWire *i2cBus = &Wire);
 
   void setDataRate(DataRate dataRate) { _dataRateBits = (uint16_t)dataRate; };
   DataRate dataRate() const { return (DataRate)_dataRateBits; };
