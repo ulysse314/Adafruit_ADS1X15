@@ -1,6 +1,6 @@
 /**************************************************************************/
 /*!
-    @file     ADS1015.cpp
+    @file     ADS1X15.cpp
     @author   K.Townsend (Adafruit Industries)
 
     @mainpage Adafruit ADS1X15 ADC Breakout Driver
@@ -30,17 +30,133 @@
 
 #include "ADS1X15.h"
 
+#include <Wire.h>
 #include <math.h>
 
-ADS1X15::ADS1X15(uint8_t bitShift,
-                 uint16_t dataRateBits,
-                 I2CAddress i2cAddress,
-                 TwoWire *i2cBus) :
-    m_bitShift(bitShift),
+
+/*=========================================================================
+    POINTER REGISTER
+    -----------------------------------------------------------------------*/
+#define ADS1X15_REG_POINTER_CONVERT (0x00)   ///< Conversion
+#define ADS1X15_REG_POINTER_CONFIG (0x01)    ///< Configuration
+#define ADS1X15_REG_POINTER_LOWTHRESH (0x02) ///< Low threshold
+#define ADS1X15_REG_POINTER_HITHRESH (0x03)  ///< High threshold
+/*=========================================================================*/
+
+/*=========================================================================
+    CONFIG REGISTER
+    -----------------------------------------------------------------------*/
+#define ADS1X15_REG_CONFIG_OS_SINGLE (0x8000) ///< Write: Set to start a single-conversion
+#define ADS1X15_REG_CONFIG_OS_BUSY (0x0000) ///< Read: Bit = 0 when conversion is in progress
+#define ADS1X15_REG_CONFIG_OS_NOTBUSY (0x8000) ///< Read: Bit = 1 when device is not performing a conversion
+
+#define ADS1X15_REG_CONFIG_MUX_DIFF_0_1 (0x0000) ///< Differential P = AIN0, N = AIN1 (default)
+#define ADS1X15_REG_CONFIG_MUX_DIFF_0_3 (0x1000) ///< Differential P = AIN0, N = AIN3
+#define ADS1X15_REG_CONFIG_MUX_DIFF_1_3 (0x2000) ///< Differential P = AIN1, N = AIN3
+#define ADS1X15_REG_CONFIG_MUX_DIFF_2_3 (0x3000) ///< Differential P = AIN2, N = AIN3
+#define ADS1X15_REG_CONFIG_MUX_DIFF_0_GND (0x4000) ///< Differential P = AIN0, N = GND
+#define ADS1X15_REG_CONFIG_MUX_DIFF_1_GND (0x5000) ///< Differential P = AIN1, N = GND
+#define ADS1X15_REG_CONFIG_MUX_DIFF_2_GND (0x6000) ///< Differential P = AIN2, N = GND
+#define ADS1X15_REG_CONFIG_MUX_DIFF_3_GND (0x7000) ///< Differential P = AIN3, N = GND
+
+#define ADS1X15_REG_CONFIG_PGA_6_144V (0x0000) ///< +/-6.144V range = Gain 2/3
+#define ADS1X15_REG_CONFIG_PGA_4_096V (0x0200) ///< +/-4.096V range = Gain 1
+#define ADS1X15_REG_CONFIG_PGA_2_048V (0x0400) ///< +/-2.048V range = Gain 2 (default)
+#define ADS1X15_REG_CONFIG_PGA_1_024V (0x0600) ///< +/-1.024V range = Gain 4
+#define ADS1X15_REG_CONFIG_PGA_0_512V (0x0800) ///< +/-0.512V range = Gain 8
+#define ADS1X15_REG_CONFIG_PGA_0_256V (0x0A00) ///< +/-0.256V range = Gain 16
+
+#define ADS1X15_REG_CONFIG_MODE_CONTIN (0x0000) ///< Continuous conversion mode
+#define ADS1X15_REG_CONFIG_MODE_SINGLE (0x0100) ///< Power-down single-shot mode (default)
+
+#define ADS1015_REG_CONFIG_DR_128SPS (0x0000) ///< 128 samples per second
+#define ADS1015_REG_CONFIG_DR_250SPS (0x0020) ///< 250 samples per second
+#define ADS1015_REG_CONFIG_DR_490SPS (0x0040) ///< 490 samples per second
+#define ADS1015_REG_CONFIG_DR_920SPS (0x0060) ///< 920 samples per second
+#define ADS1015_REG_CONFIG_DR_1600SPS (0x0080) ///< 1600 samples per second (default)
+#define ADS1015_REG_CONFIG_DR_2400SPS (0x00A0) ///< 2400 samples per second
+#define ADS1015_REG_CONFIG_DR_3300SPS (0x00C0) ///< 3300 samples per second
+
+#define ADS1115_REG_CONFIG_DR_8SPS (0x0000) ///< 8 samples per second
+#define ADS1115_REG_CONFIG_DR_16SPS (0x0020) ///< 16 samples per second
+#define ADS1115_REG_CONFIG_DR_32SPS (0x0040) ///< 32 samples per second
+#define ADS1115_REG_CONFIG_DR_64SPS (0x0060) ///< 64 samples per second
+#define ADS1115_REG_CONFIG_DR_128SPS (0x0080) ///< 128 samples per second (default)
+#define ADS1115_REG_CONFIG_DR_250SPS (0x00A0) ///< 250 samples per second
+#define ADS1115_REG_CONFIG_DR_475SPS (0x00C0) ///< 475 samples per second
+#define ADS1115_REG_CONFIG_DR_860SPS (0x00E0) ///< 860 samples per second
+
+#define ADS1X15_REG_CONFIG_CMODE_TRAD (0x0000) ///< Traditional comparator with hysteresis (default)
+#define ADS1X15_REG_CONFIG_CMODE_WINDOW (0x0010) ///< Window comparator
+
+#define ADS1X15_REG_CONFIG_CPOL_ACTVLOW (0x0000) ///< ALERT/RDY pin is low when active (default)
+#define ADS1X15_REG_CONFIG_CPOL_ACTVHI (0x0008) ///< ALERT/RDY pin is high when active
+
+#define ADS1X15_REG_CONFIG_CLAT_NONLAT (0x0000) ///< Non-latching comparator (default)
+#define ADS1X15_REG_CONFIG_CLAT_LATCH (0x0004) ///< Latching comparator
+
+#define ADS1X15_REG_CONFIG_CQUE_1CONV (0x0000) ///< Assert ALERT/RDY after one conversions
+#define ADS1X15_REG_CONFIG_CQUE_2CONV (0x0001) ///< Assert ALERT/RDY after two conversions
+#define ADS1X15_REG_CONFIG_CQUE_4CONV (0x0002) ///< Assert ALERT/RDY after four conversions
+#define ADS1X15_REG_CONFIG_CQUE_NONE (0x0003) ///< Disable the comparator and put ALERT/RDY in high state (default)
+/*=========================================================================*/
+
+namespace {
+
+uint16_t gainRegisterValue(ADS1X15::Gain gain) {
+  switch (gain) {
+  case ADS1X15::Gain::TwoThirds:
+    return ADS1X15_REG_CONFIG_PGA_6_144V;
+  case ADS1X15::Gain::One:
+    return ADS1X15_REG_CONFIG_PGA_4_096V;
+  case ADS1X15::Gain::Two:
+    return ADS1X15_REG_CONFIG_PGA_2_048V;
+  case ADS1X15::Gain::Four:
+    return ADS1X15_REG_CONFIG_PGA_1_024V;
+  case ADS1X15::Gain::Eight:
+    return ADS1X15_REG_CONFIG_PGA_0_512V;
+  case ADS1X15::Gain::Sixteen:
+    return ADS1X15_REG_CONFIG_PGA_0_256V;
+  }
+  return 0;
+}
+
+uint16_t inputChannelRegisterValue(ADS1X15::InputChannel channel) {
+  switch (channel) {
+  case ADS1X15::InputChannel::A0ToA1:
+    return ADS1X15_REG_CONFIG_MUX_DIFF_0_1;
+  case ADS1X15::InputChannel::A0ToA3:
+    return ADS1X15_REG_CONFIG_MUX_DIFF_0_3;
+  case ADS1X15::InputChannel::A1ToA3:
+    return ADS1X15_REG_CONFIG_MUX_DIFF_1_3;
+  case ADS1X15::InputChannel::A2ToA3:
+    return ADS1X15_REG_CONFIG_MUX_DIFF_2_3;
+  case ADS1X15::InputChannel::A0ToGND:
+    return ADS1X15_REG_CONFIG_MUX_DIFF_0_GND;
+  case ADS1X15::InputChannel::A1ToGND:
+    return ADS1X15_REG_CONFIG_MUX_DIFF_1_GND;
+  case ADS1X15::InputChannel::A2ToGND:
+    return ADS1X15_REG_CONFIG_MUX_DIFF_2_GND;
+  case ADS1X15::InputChannel::A3ToGND:
+    return ADS1X15_REG_CONFIG_MUX_DIFF_3_GND;
+  }
+  return 0;
+}
+
+} // namespace
+
+
+/**************************************************************************/
+/*!
+    @brief  Instantiates a new ADS1X15 class w/appropriate properties
+
+    @param i2cBus I2C bus
+    @param i2cAddress I2C address of device
+*/
+/**************************************************************************/
+ADS1X15::ADS1X15(TwoWire *i2cBus, I2CAddress i2cAddress) :
     _i2cAddress(i2cAddress),
-    _i2cBus(i2cBus),
-    _dataRateBits(dataRateBits),
-    m_gain(GAIN_TWOTHIRDS) {
+    _i2cBus(i2cBus) {
 }
 
 ADS1X15::~ADS1X15() {
@@ -48,76 +164,37 @@ ADS1X15::~ADS1X15() {
 
 /**************************************************************************/
 /*!
-    @brief  Sets up the HW (reads coefficients values, etc.)
-*/
-/**************************************************************************/
-bool ADS1X15::begin() { return true; }
-
-/**************************************************************************/
-/*!
-    @brief  Sets the gain and input voltage range
-
-    @param gain gain setting to use
-*/
-/**************************************************************************/
-void ADS1X15::setGain(adsGain_t gain) { m_gain = gain; }
-
-/**************************************************************************/
-/*!
-    @brief  Gets a gain and input voltage range
-
-    @return the gain setting
-*/
-/**************************************************************************/
-adsGain_t ADS1X15::getGain() const { return m_gain; }
-
-/**************************************************************************/
-/*!
     @brief  Gets a single-ended ADC reading from the specified channel
 
     @param channel ADC channel to read
+    @param value a pointer to int16_t to get the value
 
-    @return the ADC reading
+    @return true if the read was successful
 */
 /**************************************************************************/
-bool ADS1X15::readADC_SingleEnded(uint8_t channel, int16_t *value) {
-  if (channel > 3) {
-    return false;
-  }
-
+bool ADS1X15::readADCSingleEnded(InputChannel channel, int16_t *value) {
   // Start with default values
   uint16_t config =
-      ADS1015_REG_CONFIG_CQUE_NONE |    // Disable the comparator (default val)
-      ADS1015_REG_CONFIG_CLAT_NONLAT |  // Non-latching (default val)
-      ADS1015_REG_CONFIG_CPOL_ACTVLOW | // Alert/Rdy active low   (default val)
-      ADS1015_REG_CONFIG_CMODE_TRAD |   // Traditional comparator (default val)
-      _dataRateBits                 |   // samples per second
-      ADS1015_REG_CONFIG_MODE_SINGLE;   // Single-shot mode (default)
+      ADS1X15_REG_CONFIG_CQUE_NONE |    // Disable the comparator (default val)
+      ADS1X15_REG_CONFIG_CLAT_NONLAT |  // Non-latching (default val)
+      ADS1X15_REG_CONFIG_CPOL_ACTVLOW | // Alert/Rdy active low   (default val)
+      ADS1X15_REG_CONFIG_CMODE_TRAD |   // Traditional comparator (default val)
+      ADS1X15_REG_CONFIG_MODE_SINGLE;   // Single-shot mode (default)
+
+  // samples per second
+  config |= dataRateRegisterValue();
 
   // Set PGA/voltage range
-  config |= m_gain;
+  config |= gainRegisterValue(_gain);
 
   // Set single-ended input channel
-  switch (channel) {
-  case (0):
-    config |= ADS1015_REG_CONFIG_MUX_SINGLE_0;
-    break;
-  case (1):
-    config |= ADS1015_REG_CONFIG_MUX_SINGLE_1;
-    break;
-  case (2):
-    config |= ADS1015_REG_CONFIG_MUX_SINGLE_2;
-    break;
-  case (3):
-    config |= ADS1015_REG_CONFIG_MUX_SINGLE_3;
-    break;
-  }
+  config |= inputChannelRegisterValue(channel);
 
   // Set 'start single-conversion' bit
-  config |= ADS1015_REG_CONFIG_OS_SINGLE;
+  config |= ADS1X15_REG_CONFIG_OS_SINGLE;
 
   // Write config register to the ADC
-  if (!writeRegister(ADS1015_REG_POINTER_CONFIG, config)) {
+  if (!writeRegister(ADS1X15_REG_POINTER_CONFIG, config)) {
     return false;
   }
 
@@ -126,117 +203,19 @@ bool ADS1X15::readADC_SingleEnded(uint8_t channel, int16_t *value) {
 
   // Read the conversion results
   // Shift 12-bit results right 4 bits for the ADS1015
-  if (!readRegister(ADS1015_REG_POINTER_CONVERT, (uint16_t *)value)) {
+  if (!readRegister(ADS1X15_REG_POINTER_CONVERT, (uint16_t *)value)) {
     return false;
   }
   if (value) {
-    *value = *value >> m_bitShift;
+    *value = *value >> bitShift();
+  }
+  // Shift 12-bit results right 4 bits for the ADS1015,
+  // making sure we keep the sign bit intact
+  if (*value > 0x07FF) {
+    // negative number - extend the sign to 16th bit
+    *value |= 0xF000;
   }
   return true;
-}
-
-/**************************************************************************/
-/*!
-    @brief  Reads the conversion results, measuring the voltage
-            difference between the P (AIN0) and N (AIN1) input.  Generates
-            a signed value since the difference can be either
-            positive or negative.
-
-    @return the ADC reading
-*/
-/**************************************************************************/
-int16_t ADS1X15::readADC_Differential_0_1() {
-  // Start with default values
-  uint16_t config =
-      ADS1015_REG_CONFIG_CQUE_NONE |    // Disable the comparator (default val)
-      ADS1015_REG_CONFIG_CLAT_NONLAT |  // Non-latching (default val)
-      ADS1015_REG_CONFIG_CPOL_ACTVLOW | // Alert/Rdy active low   (default val)
-      ADS1015_REG_CONFIG_CMODE_TRAD |   // Traditional comparator (default val)
-      _dataRateBits                 |   // samples per second
-      ADS1015_REG_CONFIG_MODE_SINGLE;   // Single-shot mode (default)
-
-  // Set PGA/voltage range
-  config |= m_gain;
-
-  // Set channels
-  config |= ADS1015_REG_CONFIG_MUX_DIFF_0_1; // AIN0 = P, AIN1 = N
-
-  // Set 'start single-conversion' bit
-  config |= ADS1015_REG_CONFIG_OS_SINGLE;
-
-  // Write config register to the ADC
-  writeRegister(ADS1015_REG_POINTER_CONFIG, config);
-
-  // Wait for the conversion to complete
-  delay(conversionDelay());
-
-  // Read the conversion results
-  uint16_t res;
-  readRegister(ADS1015_REG_POINTER_CONVERT, &res);
-  res = res >> m_bitShift;
-  if (m_bitShift == 0) {
-    return (int16_t)res;
-  } else {
-    // Shift 12-bit results right 4 bits for the ADS1015,
-    // making sure we keep the sign bit intact
-    if (res > 0x07FF) {
-      // negative number - extend the sign to 16th bit
-      res |= 0xF000;
-    }
-    return (int16_t)res;
-  }
-}
-
-/**************************************************************************/
-/*!
-    @brief  Reads the conversion results, measuring the voltage
-            difference between the P (AIN2) and N (AIN3) input.  Generates
-            a signed value since the difference can be either
-            positive or negative.
-
-    @return the ADC reading
-*/
-/**************************************************************************/
-int16_t ADS1X15::readADC_Differential_2_3() {
-  // Start with default values
-  uint16_t config =
-      ADS1015_REG_CONFIG_CQUE_NONE |    // Disable the comparator (default val)
-      ADS1015_REG_CONFIG_CLAT_NONLAT |  // Non-latching (default val)
-      ADS1015_REG_CONFIG_CPOL_ACTVLOW | // Alert/Rdy active low   (default val)
-      ADS1015_REG_CONFIG_CMODE_TRAD |   // Traditional comparator (default val)
-      _dataRateBits                 |   // samples per second
-      ADS1015_REG_CONFIG_MODE_SINGLE;   // Single-shot mode (default)
-
-  // Set PGA/voltage range
-  config |= m_gain;
-
-  // Set channels
-  config |= ADS1015_REG_CONFIG_MUX_DIFF_2_3; // AIN2 = P, AIN3 = N
-
-  // Set 'start single-conversion' bit
-  config |= ADS1015_REG_CONFIG_OS_SINGLE;
-
-  // Write config register to the ADC
-  writeRegister(ADS1015_REG_POINTER_CONFIG, config);
-
-  // Wait for the conversion to complete
-  delay(conversionDelay());
-
-  // Read the conversion results
-  uint16_t res;
-  readRegister(ADS1015_REG_POINTER_CONVERT, &res);
-  res = res >> m_bitShift;
-  if (m_bitShift == 0) {
-    return (int16_t)res;
-  } else {
-    // Shift 12-bit results right 4 bits for the ADS1015,
-    // making sure we keep the sign bit intact
-    if (res > 0x07FF) {
-      // negative number - extend the sign to 16th bit
-      res |= 0xF000;
-    }
-    return (int16_t)res;
-  }
 }
 
 /**************************************************************************/
@@ -251,45 +230,33 @@ int16_t ADS1X15::readADC_Differential_2_3() {
     @param threshold comparator threshold
 */
 /**************************************************************************/
-bool ADS1X15::startComparator_SingleEnded(uint8_t channel, int16_t threshold) {
+bool ADS1X15::startComparator_SingleEnded(InputChannel channel, int16_t threshold) {
   // Start with default values
   uint16_t config =
-      ADS1015_REG_CONFIG_CQUE_1CONV |   // Comparator enabled and asserts on 1
+      ADS1X15_REG_CONFIG_CQUE_1CONV |   // Comparator enabled and asserts on 1
                                         // match
-      ADS1015_REG_CONFIG_CLAT_LATCH |   // Latching mode
-      ADS1015_REG_CONFIG_CPOL_ACTVLOW | // Alert/Rdy active low   (default val)
-      ADS1015_REG_CONFIG_CMODE_TRAD |   // Traditional comparator (default val)
-      _dataRateBits                 |   // samples per second
-      ADS1015_REG_CONFIG_MODE_CONTIN |  // Continuous conversion mode
-      ADS1015_REG_CONFIG_MODE_CONTIN;   // Continuous conversion mode
+      ADS1X15_REG_CONFIG_CLAT_LATCH |   // Latching mode
+      ADS1X15_REG_CONFIG_CPOL_ACTVLOW | // Alert/Rdy active low   (default val)
+      ADS1X15_REG_CONFIG_CMODE_TRAD |   // Traditional comparator (default val)
+      ADS1X15_REG_CONFIG_MODE_CONTIN;   // Continuous conversion mode
+
+  // samples per second
+  config |= dataRateRegisterValue();
 
   // Set PGA/voltage range
-  config |= m_gain;
+  config |= gainRegisterValue(_gain);
 
   // Set single-ended input channel
-  switch (channel) {
-  case (0):
-    config |= ADS1015_REG_CONFIG_MUX_SINGLE_0;
-    break;
-  case (1):
-    config |= ADS1015_REG_CONFIG_MUX_SINGLE_1;
-    break;
-  case (2):
-    config |= ADS1015_REG_CONFIG_MUX_SINGLE_2;
-    break;
-  case (3):
-    config |= ADS1015_REG_CONFIG_MUX_SINGLE_3;
-    break;
-  }
+  config |= inputChannelRegisterValue(channel);
 
   // Set the high threshold register
   // Shift 12-bit results left 4 bits for the ADS1015
-  if (!writeRegister(ADS1015_REG_POINTER_HITHRESH, threshold << m_bitShift)) {
+  if (!writeRegister(ADS1X15_REG_POINTER_HITHRESH, threshold << bitShift())) {
     return false;
   }
 
   // Write config register to the ADC
-  return writeRegister(ADS1015_REG_POINTER_CONFIG, config);
+  return writeRegister(ADS1X15_REG_POINTER_CONFIG, config);
 }
 
 /**************************************************************************/
@@ -307,9 +274,9 @@ int16_t ADS1X15::getLastConversionResults() {
 
   // Read the conversion results
   uint16_t res;
-  readRegister(ADS1015_REG_POINTER_CONVERT, &res);
-  res = res >> m_bitShift;
-  if (m_bitShift == 0) {
+  readRegister(ADS1X15_REG_POINTER_CONVERT, &res);
+  res = res >> bitShift();
+  if (bitShift() == 0) {
     return (int16_t)res;
   } else {
     // Shift 12-bit results right 4 bits for the ADS1015,
@@ -356,12 +323,12 @@ bool ADS1X15::readRegister(uint8_t reg, uint16_t *value) const {
 /*!
     @brief  Instantiates a new ADS1015 class w/appropriate properties
 
-    @param i2cAddress I2C address of device
     @param i2cBus I2C bus
+    @param i2cAddress I2C address of device
 */
 /**************************************************************************/
-ADS1015::ADS1015(I2CAddress i2cAddress, TwoWire *i2cBus) :
-    ADS1X15(4, (uint16_t)DataRate::SPS1600, i2cAddress, i2cBus)
+ADS1015::ADS1015(TwoWire *i2cBus, I2CAddress i2cAddress) :
+    ADS1X15(i2cBus, i2cAddress)
 {
 }
 
@@ -385,16 +352,40 @@ unsigned int ADS1015::samplePerSecond() const {
   return 1;
 }
 
+uint8_t ADS1015::bitShift() const {
+  return 4;
+}
+
+uint16_t ADS1015::dataRateRegisterValue() const {
+  switch (dataRate()) {
+  case DataRate::SPS128:
+    return ADS1015_REG_CONFIG_DR_128SPS;
+  case DataRate::SPS250:
+    return ADS1015_REG_CONFIG_DR_250SPS;
+  case DataRate::SPS490:
+    return ADS1015_REG_CONFIG_DR_490SPS;
+  case DataRate::SPS920:
+    return ADS1015_REG_CONFIG_DR_920SPS;
+  case DataRate::SPS1600:
+    return ADS1015_REG_CONFIG_DR_1600SPS;
+  case DataRate::SPS2400:
+    return ADS1015_REG_CONFIG_DR_2400SPS;
+  case DataRate::SPS3300:
+    return ADS1015_REG_CONFIG_DR_3300SPS;
+  }
+  return 0;
+}
+
 /**************************************************************************/
 /*!
     @brief  Instantiates a new ADS1115 class w/appropriate properties
 
-    @param i2cAddress I2C address of device
     @param i2cBus I2C bus
+    @param i2cAddress I2C address of device
 */
 /**************************************************************************/
-ADS1115::ADS1115(I2CAddress i2cAddress, TwoWire *i2cBus) :
-    ADS1X15(0, (uint16_t)DataRate::SPS128, i2cAddress, i2cBus)
+ADS1115::ADS1115(TwoWire *i2cBus, I2CAddress i2cAddress) :
+    ADS1X15(i2cBus, i2cAddress)
 {
 }
 
@@ -418,4 +409,30 @@ unsigned int ADS1115::samplePerSecond() const {
     return 860;
   }
   return 1;
+}
+
+uint8_t ADS1115::bitShift() const {
+  return 0;
+}
+
+uint16_t ADS1115::dataRateRegisterValue() const {
+  switch (dataRate()) {
+  case DataRate::SPS8:
+    return ADS1115_REG_CONFIG_DR_8SPS;
+  case DataRate::SPS16:
+    return ADS1115_REG_CONFIG_DR_16SPS;
+  case DataRate::SPS32:
+    return ADS1115_REG_CONFIG_DR_32SPS;
+  case DataRate::SPS64:
+    return ADS1115_REG_CONFIG_DR_64SPS;
+  case DataRate::SPS128:
+    return ADS1115_REG_CONFIG_DR_128SPS;
+  case DataRate::SPS250:
+    return ADS1115_REG_CONFIG_DR_250SPS;
+  case DataRate::SPS475:
+    return ADS1115_REG_CONFIG_DR_475SPS;
+  case DataRate::SPS860:
+    return ADS1115_REG_CONFIG_DR_860SPS;
+  }
+  return 0;
 }
